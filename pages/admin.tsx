@@ -22,27 +22,27 @@ const AdminPage: React.FC = () => {
   }, []);
 
   // 管理画面で次の問題を出題
-  const startQuestion = () => {
+  const startQuestion = async () => {
     if (questionIndex < questions.length) {
-      gameManager.setCurrentQuestion(questions[questionIndex]);
-      gameManager.setGameState('question');
+      await gameManager.setCurrentQuestion(questions[questionIndex]);
+      await gameManager.setGameState('question');
     }
   };
 
   // 管理画面で正解発表
-  const showAnswer = () => {
-    gameManager.setGameState('answer');
-    gameManager.processPendingAnswers();
+  const showAnswer = async () => {
+    await gameManager.setGameState('answer');
+    await gameManager.processPendingAnswers();
   };
 
   // 次の問題へ進む
-  const nextQuestion = () => {
-    gameManager.nextQuestion();
+  const nextQuestion = async () => {
+    await gameManager.nextQuestion();
   };
 
   // ゲームリセット
-  const resetGame = () => {
-    gameManager.resetGame();
+  const resetGame = async () => {
+    await gameManager.resetGame();
   };
 
   return (

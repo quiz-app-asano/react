@@ -1,173 +1,307 @@
-// pages/dashboard.tsx
-import React, { useState, useEffect } from 'react';
-import { Trophy, Clock, Users } from 'lucide-react';
-import { gameManager } from '../lib/gameState';
+// lib/gameState.ts
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, set, onValue } from 'firebase/database';
 
-const DashboardPage: React.FC = () => {
-  // 状態をリアルタイムで同期
-  const [players, setPlayers] = useState(gameManager.players);
-  const [questionResults, setQuestionResults] = useState(gameManager.questionResults);
+export interface Question {
+  id: number;
+  question: string;
+  options: string[];
+  correct: number;
+  points: number;
+}
 
-  useEffect(() => {
-    const unsubscribe = gameManager.subscribe(() => {
-      setPlayers(gameManager.players);
-      setQuestionResults(gameManager.questionResults);
-    });
+export interface Answer {
+  playerName: string;
+  answer: number;
+  isCorrect: boolean;
+  timestamp: number;
+  points: number;
+}
 
-    return unsubscribe;
-  }, []);
+export interface QuestionResult {
+  questionId: number;
+  question: string;
+  correctAnswer: number;
+  answers: Answer[];
+}
 
-  // ランキング計算
-  const getRanking = () => {
-    return Object.entries(players)
-      .sort(([,a], [,b]) => b - a)
-      .map(([name, score], index) => ({ rank: index + 1, name, score }));
-  };
+export type GameState = 'waiting' | 'question' | 'answer' | 'results';
 
-  const ranking = getRanking();
-  const latestQuestionResult = questionResults[questionResults.length - 1];
+export interface GameData {
+  gameState: GameState;
+  currentQuestion: Question | null;
+  players: Record<string, number>;
+  questionIndex: number;
+  questionResults: QuestionResult[];
+  pendingAnswers: Record<string, any>;
+}
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-purple-900 text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-center mb-8">
-          <h1 className="text-4xl font-bold flex items-center gap-3">
-            <Trophy className="w-10 h-10 text-yellow-400" />
-            結婚式クイズ ランキング
-          </h1>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* ランキング */}
-          <div className="bg-white/10 backdrop-blur rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-yellow-400" />
-              総合ランキング
-            </h2>
-            {ranking.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <p className="text-xl text-gray-400">まだ参加者がいません</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {ranking.map((player, index) => (
-                  <div
-                    key={player.name}
-                    className={`flex items-center justify-between p-4 rounded-lg ${
-                      index === 0
-                        ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border border-yellow-400/50'
-                        : index === 1
-                        ? 'bg-gradient-to-r from-gray-400/20 to-gray-500/20 border border-gray-400/50'
-                        : index === 2
-                        ? 'bg-gradient-to-r from-orange-600/20 to-orange-700/20 border border-orange-500/50'
-                        : 'bg-white/5'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                          index === 0
-                            ? 'bg-yellow-500 text-yellow-900'
-                            : index === 1
-                            ? 'bg-gray-400 text-gray-900'
-                            : index === 2
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-slate-600 text-white'
-                        }`}
-                      >
-                        {player.rank}
-                      </div>
-                      <div>
-                        <div className="text-lg font-semibold">
-                          {player.name}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold">
-                        {player.score}
-                      </div>
-                      <div className="text-sm text-gray-400">pts</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 直前の問題の回答順 */}
-          <div className="bg-white/10 backdrop-blur rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Clock className="w-6 h-6 text-blue-400" />
-              回答順（最新問題）
-            </h2>
-            {!latestQuestionResult || latestQuestionResult.answers.length === 0 ? (
-              <div className="text-center py-12">
-                <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <p className="text-lg text-gray-400">まだ回答がありません</p>
-              </div>
-            ) : (
-              <div>
-                <div className="mb-4 p-3 bg-white/5 rounded-lg">
-                  <h3 className="font-semibold text-sm text-gray-300 mb-1">問題</h3>
-                  <p className="text-sm">{latestQuestionResult.question}</p>
-                </div>
-                
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {latestQuestionResult.answers.map((answer: any, index: number) => (
-                    <div
-                      key={`${answer.playerName}-${answer.timestamp}`}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
-                        answer.isCorrect
-                          ? 'bg-green-500/20 border border-green-400/30'
-                          : 'bg-red-500/20 border border-red-400/30'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                          index === 0 && answer.isCorrect
-                            ? 'bg-yellow-500 text-yellow-900'
-                            : answer.isCorrect
-                            ? 'bg-green-500 text-white'
-                            : 'bg-red-500 text-white'
-                        }`}>
-                          {index + 1}
-                        </div>
-                        <div>
-                          <div className="font-semibold">{answer.playerName}</div>
-                          <div className="text-xs text-gray-300">
-                            {new Date(answer.timestamp).toLocaleTimeString('ja-JP', {
-                              hour12: false,
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit'
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`font-bold ${
-                          answer.isCorrect ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          {answer.isCorrect ? '正解' : '不正解'}
-                        </div>
-                        {answer.points > 0 && (
-                          <div className="text-sm text-green-300">
-                            +{answer.points}pt
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+// Firebase設定（あなたのFirebase設定に置き換えてください）
+const firebaseConfig = {
+  apiKey: "your-api-key",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project-default-rtdb.firebaseio.com/",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "your-app-id"
 };
 
-export default DashboardPage;
+// 結婚式用クイズ問題
+export const questions: Question[] = [
+  {
+    id: 1,
+    question: "新郎の出身地はどこでしょう？",
+    options: ["東京都", "大阪府", "福岡県", "北海道"],
+    correct: 0,
+    points: 100
+  },
+  {
+    id: 2,
+    question: "新婦の好きな食べ物は？",
+    options: ["寿司", "パスタ", "カレー"],
+    correct: 1,
+    points: 100
+  },
+  {
+    id: 3,
+    question: "二人が初めて出会った場所は？",
+    options: ["大学", "職場"],
+    correct: 1,
+    points: 150
+  },
+  {
+    id: 4,
+    question: "新郎のプロポーズの言葉は？",
+    options: ["結婚してください", "一緒にいてください", "僕と一生一緒にいてくれませんか", "君と家族になりたい"],
+    correct: 2,
+    points: 200
+  }
+];
+
+// Firebase初期化（エラーハンドリング付き）
+let app: any = null;
+let database: any = null;
+
+if (typeof window !== 'undefined') {
+  try {
+    // Firebase設定の検証
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'your-api-key') {
+      console.warn('Firebase config not set properly. Please update firebaseConfig in gameState.ts');
+    } else {
+      app = initializeApp(firebaseConfig);
+      database = getDatabase(app);
+      console.log('Firebase initialized successfully');
+    }
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+  }
+}
+
+// Firebase を使った状態管理
+class GameStateManager {
+  private static instance: GameStateManager;
+  private listeners: Array<() => void> = [];
+  private data: GameData;
+  private isConnected: boolean = false;
+  
+  constructor() {
+    // 初期データ（安全な初期化）
+    this.data = {
+      gameState: 'waiting',
+      currentQuestion: null,
+      players: {},
+      questionIndex: 0,
+      questionResults: [],
+      pendingAnswers: {}
+    };
+
+    // Firebaseから状態を監視（エラーハンドリング付き）
+    if (database) {
+      try {
+        const gameRef = ref(database, 'gameState');
+        onValue(gameRef, (snapshot) => {
+          try {
+            const data = snapshot.val();
+            if (data && typeof data === 'object') {
+              // データの検証
+              this.data = {
+                gameState: data.gameState || 'waiting',
+                currentQuestion: data.currentQuestion || null,
+                players: data.players || {},
+                questionIndex: data.questionIndex || 0,
+                questionResults: data.questionResults || [],
+                pendingAnswers: data.pendingAnswers || {}
+              };
+              this.isConnected = true;
+              this.notify();
+            }
+          } catch (error) {
+            console.error('Data parsing error:', error);
+          }
+        }, (error) => {
+          console.error('Firebase read error:', error);
+          this.isConnected = false;
+        });
+      } catch (error) {
+        console.error('Firebase listener setup error:', error);
+      }
+    } else {
+      console.warn('Firebase database not initialized. Running in offline mode.');
+    }
+  }
+
+  static getInstance(): GameStateManager {
+    if (!GameStateManager.instance) {
+      GameStateManager.instance = new GameStateManager();
+    }
+    return GameStateManager.instance;
+  }
+
+  private async saveToFirebase() {
+    if (!database) {
+      console.warn('Firebase not available. Changes not saved.');
+      return;
+    }
+    
+    try {
+      const gameRef = ref(database, 'gameState');
+      await set(gameRef, this.data);
+    } catch (error) {
+      console.error('Firebase save error:', error);
+    }
+  }
+
+  subscribe(listener: () => void) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  private notify() {
+    try {
+      this.listeners.forEach(listener => listener());
+    } catch (error) {
+      console.error('Listener notification error:', error);
+    }
+  }
+
+  // ゲッター（安全なアクセス）
+  get gameState() { return this.data?.gameState || 'waiting'; }
+  get currentQuestion() { return this.data?.currentQuestion || null; }
+  get players() { return this.data?.players || {}; }
+  get questionIndex() { return this.data?.questionIndex || 0; }
+  get questionResults() { return this.data?.questionResults || []; }
+  get pendingAnswers() { return this.data?.pendingAnswers || {}; }
+  get connected() { return this.isConnected; }
+
+  async setGameState(state: GameState) {
+    this.data.gameState = state;
+    this.notify();
+    await this.saveToFirebase();
+  }
+
+  async setCurrentQuestion(question: Question | null) {
+    this.data.currentQuestion = question;
+    this.notify();
+    await this.saveToFirebase();
+  }
+
+  async addPlayer(name: string) {
+    if (!name || typeof name !== 'string') return;
+    this.data.players[name] = this.data.players[name] || 0;
+    this.notify();
+    await this.saveToFirebase();
+  }
+
+  async addPendingAnswer(playerName: string, answerData: any) {
+    if (!playerName || !answerData) return;
+    this.data.pendingAnswers[playerName] = answerData;
+    this.notify();
+    await this.saveToFirebase();
+  }
+
+  async processPendingAnswers() {
+    try {
+      // ポイント加算
+      Object.entries(this.data.pendingAnswers).forEach(([playerName, answerData]) => {
+        if (answerData && answerData.isCorrect) {
+          this.data.players[playerName] = (this.data.players[playerName] || 0) + (answerData.points || 0);
+        }
+      });
+
+      // 回答結果を記録
+      if (!this.data.questionResults[this.data.questionIndex]) {
+        this.data.questionResults[this.data.questionIndex] = {
+          questionId: this.data.currentQuestion?.id || 0,
+          question: this.data.currentQuestion?.question || '',
+          correctAnswer: this.data.currentQuestion?.correct || 0,
+          answers: []
+        };
+      }
+
+      Object.entries(this.data.pendingAnswers).forEach(([playerName, answerData]) => {
+        if (answerData) {
+          this.data.questionResults[this.data.questionIndex].answers.push({
+            playerName,
+            answer: answerData.answer || 0,
+            isCorrect: answerData.isCorrect || false,
+            timestamp: answerData.timestamp || Date.now(),
+            points: answerData.points || 0
+          });
+        }
+      });
+
+      this.data.questionResults[this.data.questionIndex].answers.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      this.notify();
+      await this.saveToFirebase();
+    } catch (error) {
+      console.error('Process pending answers error:', error);
+    }
+  }
+
+  async nextQuestion() {
+    if (this.data.questionIndex + 1 < questions.length) {
+      this.data.questionIndex++;
+      this.data.gameState = 'waiting';
+      this.data.currentQuestion = null;
+      this.data.pendingAnswers = {};
+    } else {
+      this.data.gameState = 'results';
+    }
+    this.notify();
+    await this.saveToFirebase();
+  }
+
+  async resetGame() {
+    this.data = {
+      gameState: 'waiting',
+      currentQuestion: null,
+      questionIndex: 0,
+      players: {},
+      questionResults: [],
+      pendingAnswers: {}
+    };
+    this.notify();
+    await this.saveToFirebase();
+  }
+
+  getRanking() {
+    try {
+      return Object.entries(this.data.players || {})
+        .filter(([name, score]) => name && typeof score === 'number')
+        .sort(([,a], [,b]) => (b || 0) - (a || 0))
+        .map(([name, score], index) => ({ 
+          rank: index + 1, 
+          name, 
+          score: score || 0 
+        }));
+    } catch (error) {
+      console.error('Ranking calculation error:', error);
+      return [];
+    }
+  }
+}
+
+export const gameManager = GameStateManager.getInstance();
