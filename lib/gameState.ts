@@ -29,6 +29,16 @@ export interface QuestionResult {
 
 export type GameState = 'waiting' | 'question' | 'answer' | 'results';
 
+export interface GameData {
+  gameState: GameState;
+  currentQuestion: Question | null;
+  players: Record<string, number>;
+  questionIndex: number;
+  questionResults: QuestionResult[];
+  pendingAnswers: Record<string, any>;
+  lastUpdated: number;
+}
+
 // クイズ問題
 export const questions: Question[] = [
   {
@@ -61,23 +71,69 @@ export const questions: Question[] = [
   }
 ];
 
-// 簡易的な状態管理（実際のアプリではReduxやZustandを使用）
+
+const STORAGE_KEY = 'wedding-quiz-game-state';
+
+// LocalStorageを使った状態管理
 class GameStateManager {
   private static instance: GameStateManager;
   private listeners: Array<() => void> = [];
+  private data: GameData;
   
-  public gameState: GameState = 'waiting';
-  public currentQuestion: Question | null = null;
-  public players: Record<string, number> = {};
-  public questionIndex: number = 0;
-  public questionResults: QuestionResult[] = [];
-  public pendingAnswers: Record<string, any> = {};
+  constructor() {
+    // 初期データ
+    const defaultData: GameData = {
+      gameState: 'waiting',
+      currentQuestion: null,
+      players: {},
+      questionIndex: 0,
+      questionResults: [],
+      pendingAnswers: {},
+      lastUpdated: Date.now()
+    };
+
+    // LocalStorageから読み込み、なければ初期データ
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      this.data = stored ? JSON.parse(stored) : defaultData;
+    } else {
+      this.data = defaultData;
+    }
+
+    // 定期的にLocalStorageをチェックして同期
+    if (typeof window !== 'undefined') {
+      setInterval(() => {
+        this.syncFromStorage();
+      }, 1000); // 1秒ごと
+    }
+  }
 
   static getInstance(): GameStateManager {
     if (!GameStateManager.instance) {
       GameStateManager.instance = new GameStateManager();
     }
     return GameStateManager.instance;
+  }
+
+  private syncFromStorage() {
+    if (typeof window === 'undefined') return;
+    
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const storedData: GameData = JSON.parse(stored);
+      // 最後の更新時刻をチェックして、新しいデータのみ同期
+      if (storedData.lastUpdated > this.data.lastUpdated) {
+        this.data = storedData;
+        this.notify();
+      }
+    }
+  }
+
+  private saveToStorage() {
+    if (typeof window === 'undefined') return;
+    
+    this.data.lastUpdated = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
   }
 
   subscribe(listener: () => void) {
@@ -91,45 +147,58 @@ class GameStateManager {
     this.listeners.forEach(listener => listener());
   }
 
+  // ゲッター
+  get gameState() { return this.data.gameState; }
+  get currentQuestion() { return this.data.currentQuestion; }
+  get players() { return this.data.players; }
+  get questionIndex() { return this.data.questionIndex; }
+  get questionResults() { return this.data.questionResults; }
+  get pendingAnswers() { return this.data.pendingAnswers; }
+
   setGameState(state: GameState) {
-    this.gameState = state;
+    this.data.gameState = state;
+    this.saveToStorage();
     this.notify();
   }
 
   setCurrentQuestion(question: Question | null) {
-    this.currentQuestion = question;
+    this.data.currentQuestion = question;
+    this.saveToStorage();
     this.notify();
   }
 
   addPlayer(name: string) {
-    this.players[name] = this.players[name] || 0;
+    this.data.players[name] = this.data.players[name] || 0;
+    this.saveToStorage();
     this.notify();
   }
 
   addPendingAnswer(playerName: string, answerData: any) {
-    this.pendingAnswers[playerName] = answerData;
+    this.data.pendingAnswers[playerName] = answerData;
+    this.saveToStorage();
     this.notify();
   }
 
   processPendingAnswers() {
-    Object.entries(this.pendingAnswers).forEach(([playerName, answerData]) => {
+    // ポイント加算
+    Object.entries(this.data.pendingAnswers).forEach(([playerName, answerData]) => {
       if (answerData.isCorrect) {
-        this.players[playerName] = (this.players[playerName] || 0) + answerData.points;
+        this.data.players[playerName] = (this.data.players[playerName] || 0) + answerData.points;
       }
     });
 
     // 回答結果を記録
-    if (!this.questionResults[this.questionIndex]) {
-      this.questionResults[this.questionIndex] = {
-        questionId: this.currentQuestion!.id,
-        question: this.currentQuestion!.question,
-        correctAnswer: this.currentQuestion!.correct,
+    if (!this.data.questionResults[this.data.questionIndex]) {
+      this.data.questionResults[this.data.questionIndex] = {
+        questionId: this.data.currentQuestion!.id,
+        question: this.data.currentQuestion!.question,
+        correctAnswer: this.data.currentQuestion!.correct,
         answers: []
       };
     }
 
-    Object.entries(this.pendingAnswers).forEach(([playerName, answerData]) => {
-      this.questionResults[this.questionIndex].answers.push({
+    Object.entries(this.data.pendingAnswers).forEach(([playerName, answerData]) => {
+      this.data.questionResults[this.data.questionIndex].answers.push({
         playerName,
         answer: answerData.answer,
         isCorrect: answerData.isCorrect,
@@ -138,34 +207,40 @@ class GameStateManager {
       });
     });
 
-    this.questionResults[this.questionIndex].answers.sort((a, b) => a.timestamp - b.timestamp);
+    this.data.questionResults[this.data.questionIndex].answers.sort((a, b) => a.timestamp - b.timestamp);
+    this.saveToStorage();
     this.notify();
   }
 
   nextQuestion() {
-    if (this.questionIndex + 1 < questions.length) {
-      this.questionIndex++;
-      this.gameState = 'waiting';
-      this.currentQuestion = null;
-      this.pendingAnswers = {};
+    if (this.data.questionIndex + 1 < questions.length) {
+      this.data.questionIndex++;
+      this.data.gameState = 'waiting';
+      this.data.currentQuestion = null;
+      this.data.pendingAnswers = {};
     } else {
-      this.gameState = 'results';
+      this.data.gameState = 'results';
     }
+    this.saveToStorage();
     this.notify();
   }
 
   resetGame() {
-    this.gameState = 'waiting';
-    this.currentQuestion = null;
-    this.questionIndex = 0;
-    this.players = {};
-    this.questionResults = [];
-    this.pendingAnswers = {};
+    this.data = {
+      gameState: 'waiting',
+      currentQuestion: null,
+      questionIndex: 0,
+      players: {},
+      questionResults: [],
+      pendingAnswers: {},
+      lastUpdated: Date.now()
+    };
+    this.saveToStorage();
     this.notify();
   }
 
   getRanking() {
-    return Object.entries(this.players)
+    return Object.entries(this.data.players)
       .sort(([,a], [,b]) => b - a)
       .map(([name, score], index) => ({ rank: index + 1, name, score }));
   }
