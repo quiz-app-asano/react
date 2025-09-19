@@ -14,12 +14,8 @@
     "firebase": "^10.0.0"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
     "autoprefixer": "latest",
     "postcss": "latest",
-    "tailwindcss": "^3.0.0",
-    "typescript": "latest"
+    "tailwindcss": "^3.0.0"
   }
 }
