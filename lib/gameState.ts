@@ -29,26 +29,26 @@ export interface QuestionResult {
 
 export type GameState = 'waiting' | 'question' | 'answer' | 'results';
 
-// 結婚式用クイズ問題
+// クイズ問題
 export const questions: Question[] = [
   {
     id: 1,
-    question: "新郎の出身地はどこでしょう？",
-    options: ["東京都", "大阪府", "福岡県", "北海道"],
+    question: "浅野はまきのキスを当てれる？",
+    options: ["当てれる", "当てれない"],
     correct: 0,
     points: 100
   },
   {
     id: 2,
-    question: "新婦の好きな食べ物は？",
-    options: ["寿司", "パスタ", "カレー"],
+    question: "浅野が乳首だけで書いた文字は？",
+    options: ["まきあいしてる", "いしいこうだい", "慶應ファイ！"],
     correct: 1,
     points: 100
   },
   {
     id: 3,
     question: "二人が初めて出会った場所は？",
-    options: ["大学", "職場"],
+    options: ["相席屋", "合コン"],
     correct: 1,
     points: 150
   },

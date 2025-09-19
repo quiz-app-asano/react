@@ -68,7 +68,7 @@ const PlayerPage: React.FC = () => {
         <div className="max-w-lg mx-auto">
           <div className="bg-white rounded-lg p-8 shadow-xl">
             <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
-              結婚式クイズに参加
+              Yuki&Maki Wedding Party
             </h1>
             <div className="space-y-4">
               <div>
