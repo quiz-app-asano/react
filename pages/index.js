@@ -1,11 +1,10 @@
-// pages/index.tsx
 import { useState, useEffect } from 'react';
 import { Users, CheckCircle, Clock, Trophy } from 'lucide-react';
 import { gameManager, questions } from '../lib/gameState';
 
 const PlayerPage = () => {
   const [playerName, setPlayerName] = useState('');
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
 
@@ -20,7 +19,6 @@ const PlayerPage = () => {
     const savedPlayerName = localStorage.getItem('quiz-player-name');
     if (savedPlayerName && savedPlayerName.trim()) {
       setPlayerName(savedPlayerName);
-      // Firebase上に存在するかチェック
       if (gameManager.players[savedPlayerName]) {
         setIsRegistered(true);
       }
@@ -34,7 +32,6 @@ const PlayerPage = () => {
       setPlayers(gameManager.players);
       setQuestionIndex(gameManager.questionIndex);
 
-      // Firebase上のプレイヤーリストが更新された時に登録状態を同期
       const savedPlayerName = localStorage.getItem('quiz-player-name');
       if (savedPlayerName && gameManager.players[savedPlayerName] !== undefined) {
         setIsRegistered(true);
@@ -44,7 +41,6 @@ const PlayerPage = () => {
     return unsubscribe;
   }, []);
 
-  // 新しい問題が開始されたときの初期化
   useEffect(() => {
     if (gameState === 'waiting') {
       setHasAnswered(false);
@@ -52,42 +48,32 @@ const PlayerPage = () => {
     }
   }, [gameState, questionIndex]);
 
-  // プレイヤー登録
   const registerPlayer = async () => {
     if (playerName.trim()) {
       const trimmedName = playerName.trim();
-      
-      // Firebaseに保存
       await gameManager.addPlayer(trimmedName);
-      
-      // ローカルストレージにも保存（リロード対策）
       localStorage.setItem('quiz-player-name', trimmedName);
-      
       setIsRegistered(true);
     }
   };
 
-  // プレイヤーの回答を処理
-  const handleAnswer = async (answerIndex: number) => {
+  const handleAnswer = async (answerIndex) => {
     if (hasAnswered || gameState !== 'question') return;
     
     setSelectedAnswer(answerIndex);
     setHasAnswered(true);
     
-    // 回答時刻を記録
     const answerTime = Date.now();
     const trimmedName = playerName.trim();
     
-    // 回答を一時保存（ポイントはまだ加算しない）
     await gameManager.addPendingAnswer(trimmedName, {
       answer: answerIndex,
-      isCorrect: answerIndex === currentQuestion!.correct,
+      isCorrect: answerIndex === currentQuestion.correct,
       timestamp: answerTime,
-      points: answerIndex === currentQuestion!.correct ? currentQuestion!.points : 0
+      points: answerIndex === currentQuestion.correct ? currentQuestion.points : 0
     });
   };
 
-  // ゲームリセット時の処理
   const handleNewGame = () => {
     localStorage.removeItem('quiz-player-name');
     setPlayerName('');
@@ -105,7 +91,6 @@ const PlayerPage = () => {
               結婚式クイズに参加
             </h1>
             
-            {/* 既に登録済みの場合の確認 */}
             {playerName && gameManager.players[playerName] !== undefined && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-blue-800 text-sm">
@@ -147,7 +132,6 @@ const PlayerPage = () => {
                 参加する
               </button>
               
-              {/* 名前変更ボタン */}
               {playerName && (
                 <button
                   onClick={() => {
@@ -183,7 +167,6 @@ const PlayerPage = () => {
               </div>
             </div>
             
-            {/* 新しいゲーム開始ボタン */}
             <div className="mt-4">
               <button
                 onClick={handleNewGame}
@@ -233,7 +216,7 @@ const PlayerPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {currentQuestion.options.map((option: string, index: number) => (
+                  {currentQuestion.options.map((option, index) => (
                     <button
                       key={index}
                       onClick={() => handleAnswer(index)}
@@ -285,7 +268,7 @@ const PlayerPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {currentQuestion.options.map((option: string, index: number) => (
+                  {currentQuestion.options.map((option, index) => (
                     <div
                       key={index}
                       className={`w-full p-4 rounded-lg border-2 ${

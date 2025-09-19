@@ -1,16 +1,13 @@
-// pages/dashboard.tsx
 import { useState, useEffect } from 'react';
 import { Trophy, Clock, Users } from 'lucide-react';
 import { gameManager } from '../lib/gameState';
 
 const DashboardPage = () => {
-  // 状態をリアルタイムで同期（初期値を安全に設定）
-  const [players, setPlayers] = useState<Record<string, number>>({});
-  const [questionResults, setQuestionResults] = useState<any[]>([]);
+  const [players, setPlayers] = useState({});
+  const [questionResults, setQuestionResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 初期データを安全に取得
     try {
       setPlayers(gameManager.players || {});
       setQuestionResults(gameManager.questionResults || []);
@@ -20,7 +17,6 @@ const DashboardPage = () => {
       setIsLoading(false);
     }
 
-    // Firebase同期の購読
     const unsubscribe = gameManager.subscribe(() => {
       try {
         setPlayers(gameManager.players || {});
@@ -33,7 +29,6 @@ const DashboardPage = () => {
     return unsubscribe;
   }, []);
 
-  // ローディング中
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 to-purple-900 text-white p-6">
@@ -47,7 +42,6 @@ const DashboardPage = () => {
     );
   }
 
-  // ランキング計算（エラーハンドリング付き）
   const getRanking = () => {
     try {
       if (!players || typeof players !== 'object') return [];
@@ -82,7 +76,6 @@ const DashboardPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* ランキング */}
           <div className="bg-white/10 backdrop-blur rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <Trophy className="w-6 h-6 text-yellow-400" />
@@ -143,7 +136,6 @@ const DashboardPage = () => {
             )}
           </div>
 
-          {/* 直前の問題の回答順 */}
           <div className="bg-white/10 backdrop-blur rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <Clock className="w-6 h-6 text-blue-400" />
@@ -165,7 +157,7 @@ const DashboardPage = () => {
                 </div>
                 
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {(latestQuestionResult.answers || []).map((answer: any, index: number) => (
+                  {(latestQuestionResult.answers || []).map((answer, index) => (
                     <div
                       key={`${answer.playerName}-${answer.timestamp}-${index}`}
                       className={`flex items-center justify-between p-3 rounded-lg ${
