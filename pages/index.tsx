@@ -15,12 +15,30 @@ const PlayerPage: React.FC = () => {
   const [players, setPlayers] = useState(gameManager.players);
   const [questionIndex, setQuestionIndex] = useState(gameManager.questionIndex);
 
+  // ページ読み込み時にローカルストレージから復元
+  useEffect(() => {
+    const savedPlayerName = localStorage.getItem('quiz-player-name');
+    if (savedPlayerName && savedPlayerName.trim()) {
+      setPlayerName(savedPlayerName);
+      // Firebase上に存在するかチェック
+      if (gameManager.players[savedPlayerName]) {
+        setIsRegistered(true);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const unsubscribe = gameManager.subscribe(() => {
       setGameState(gameManager.gameState);
       setCurrentQuestion(gameManager.currentQuestion);
       setPlayers(gameManager.players);
       setQuestionIndex(gameManager.questionIndex);
+
+      // Firebase上のプレイヤーリストが更新された時に登録状態を同期
+      const savedPlayerName = localStorage.getItem('quiz-player-name');
+      if (savedPlayerName && gameManager.players[savedPlayerName] !== undefined) {
+        setIsRegistered(true);
+      }
     });
 
     return unsubscribe;
@@ -37,7 +55,14 @@ const PlayerPage: React.FC = () => {
   // プレイヤー登録
   const registerPlayer = async () => {
     if (playerName.trim()) {
-      await gameManager.addPlayer(playerName.trim());
+      const trimmedName = playerName.trim();
+      
+      // Firebaseに保存
+      await gameManager.addPlayer(trimmedName);
+      
+      // ローカルストレージにも保存（リロード対策）
+      localStorage.setItem('quiz-player-name', trimmedName);
+      
       setIsRegistered(true);
     }
   };
@@ -62,6 +87,15 @@ const PlayerPage: React.FC = () => {
     });
   };
 
+  // ゲームリセット時の処理
+  const handleNewGame = () => {
+    localStorage.removeItem('quiz-player-name');
+    setPlayerName('');
+    setIsRegistered(false);
+    setHasAnswered(false);
+    setSelectedAnswer(null);
+  };
+
   if (!isRegistered) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 p-4">
@@ -70,6 +104,22 @@ const PlayerPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
               結婚式クイズに参加
             </h1>
+            
+            {/* 既に登録済みの場合の確認 */}
+            {playerName && gameManager.players[playerName] !== undefined && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm">
+                  「{playerName}」で参加したことがあるようです。
+                </p>
+                <button
+                  onClick={() => setIsRegistered(true)}
+                  className="mt-2 text-blue-600 underline text-sm"
+                >
+                  そのまま続行
+                </button>
+              </div>
+            )}
+            
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -96,6 +146,19 @@ const PlayerPage: React.FC = () => {
               >
                 参加する
               </button>
+              
+              {/* 名前変更ボタン */}
+              {playerName && (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('quiz-player-name');
+                    setPlayerName('');
+                  }}
+                  className="w-full px-4 py-2 text-gray-600 text-sm underline"
+                >
+                  別の名前で参加する
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -118,6 +181,16 @@ const PlayerPage: React.FC = () => {
                 </div>
                 <div className="text-sm text-gray-500">現在のスコア</div>
               </div>
+            </div>
+            
+            {/* 新しいゲーム開始ボタン */}
+            <div className="mt-4">
+              <button
+                onClick={handleNewGame}
+                className="text-sm text-gray-500 underline"
+              >
+                別の名前で再参加
+              </button>
             </div>
           </div>
 
@@ -267,7 +340,14 @@ const PlayerPage: React.FC = () => {
                 <div className="text-3xl font-bold text-purple-600 mb-2">
                   {players[playerName?.trim()] || 0}pt
                 </div>
-                <p className="text-gray-600">お疲れ様でした！</p>
+                <p className="text-gray-600 mb-4">お疲れ様でした！</p>
+                
+                <button
+                  onClick={handleNewGame}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-semibold"
+                >
+                  新しいゲームで再参加
+                </button>
               </div>
             )}
           </div>
