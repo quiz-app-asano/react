@@ -1,9 +1,9 @@
 // pages/index.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, CheckCircle, Clock, Trophy } from 'lucide-react';
 import { gameManager, questions } from '../lib/gameState';
 
-const PlayerPage: React.FC = () => {
+const PlayerPage = () => {
   const [playerName, setPlayerName] = useState('');
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);

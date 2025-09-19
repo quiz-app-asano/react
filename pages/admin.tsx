@@ -1,9 +1,9 @@
 // pages/admin.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, Play, CheckCircle, QrCode } from 'lucide-react';
 import { gameManager, questions } from '../lib/gameState';
 
-const AdminPage: React.FC = () => {
+const AdminPage = () => {
   // 状態をリアルタイムで同期
   const [gameState, setGameState] = useState(gameManager.gameState);
   const [currentQuestion, setCurrentQuestion] = useState(gameManager.currentQuestion);
