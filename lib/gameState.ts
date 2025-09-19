@@ -1,15 +1,13 @@
 // lib/gameState.ts
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, set, onValue } from 'firebase/database';
+
 export interface Question {
   id: number;
   question: string;
   options: string[];
   correct: number;
   points: number;
-}
-
-export interface Player {
-  name: string;
-  score: number;
 }
 
 export interface Answer {
@@ -36,8 +34,17 @@ export interface GameData {
   questionIndex: number;
   questionResults: QuestionResult[];
   pendingAnswers: Record<string, any>;
-  lastUpdated: number;
 }
+
+// Firebase設定（あなたのFirebase設定に置き換えてください）
+const firebaseConfig = {
+  apiKey: "AIzaSyDxPn0RI4lPdGBJvVLITNP5-Qe8GalQeak",
+  authDomain: "asano-quiz.firebaseapp.com",
+  projectId: "asano-quiz",
+  storageBucket: "asano-quiz.firebasestorage.app",
+  messagingSenderId: "56741317827",
+  appId: "1:56741317827:web:4a6669d3557e398f892676"
+};
 
 // クイズ問題
 export const questions: Question[] = [
@@ -64,7 +71,7 @@ export const questions: Question[] = [
   },
   {
     id: 4,
-    question: "新郎のプロポーズの言葉は？",
+    question: "浅野のプロポーズの言葉は？",
     options: ["結婚してください", "一緒にいてください", "僕と一生一緒にいてくれませんか", "君と家族になりたい"],
     correct: 2,
     points: 200
@@ -72,9 +79,16 @@ export const questions: Question[] = [
 ];
 
 
-const STORAGE_KEY = 'wedding-quiz-game-state';
+// Firebase初期化
+let app: any;
+let database: any;
 
-// LocalStorageを使った状態管理
+if (typeof window !== 'undefined') {
+  app = initializeApp(firebaseConfig);
+  database = getDatabase(app);
+}
+
+// Firebase を使った状態管理
 class GameStateManager {
   private static instance: GameStateManager;
   private listeners: Array<() => void> = [];
@@ -82,29 +96,25 @@ class GameStateManager {
   
   constructor() {
     // 初期データ
-    const defaultData: GameData = {
+    this.data = {
       gameState: 'waiting',
       currentQuestion: null,
       players: {},
       questionIndex: 0,
       questionResults: [],
-      pendingAnswers: {},
-      lastUpdated: Date.now()
+      pendingAnswers: {}
     };
 
-    // LocalStorageから読み込み、なければ初期データ
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      this.data = stored ? JSON.parse(stored) : defaultData;
-    } else {
-      this.data = defaultData;
-    }
-
-    // 定期的にLocalStorageをチェックして同期
-    if (typeof window !== 'undefined') {
-      setInterval(() => {
-        this.syncFromStorage();
-      }, 1000); // 1秒ごと
+    // Firebaseから状態を監視
+    if (database) {
+      const gameRef = ref(database, 'gameState');
+      onValue(gameRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          this.data = data;
+          this.notify();
+        }
+      });
     }
   }
 
@@ -115,25 +125,15 @@ class GameStateManager {
     return GameStateManager.instance;
   }
 
-  private syncFromStorage() {
-    if (typeof window === 'undefined') return;
+  private async saveToFirebase() {
+    if (!database) return;
     
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const storedData: GameData = JSON.parse(stored);
-      // 最後の更新時刻をチェックして、新しいデータのみ同期
-      if (storedData.lastUpdated > this.data.lastUpdated) {
-        this.data = storedData;
-        this.notify();
-      }
+    try {
+      const gameRef = ref(database, 'gameState');
+      await set(gameRef, this.data);
+    } catch (error) {
+      console.error('Firebase save error:', error);
     }
-  }
-
-  private saveToStorage() {
-    if (typeof window === 'undefined') return;
-    
-    this.data.lastUpdated = Date.now();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
   }
 
   subscribe(listener: () => void) {
@@ -155,31 +155,27 @@ class GameStateManager {
   get questionResults() { return this.data.questionResults; }
   get pendingAnswers() { return this.data.pendingAnswers; }
 
-  setGameState(state: GameState) {
+  async setGameState(state: GameState) {
     this.data.gameState = state;
-    this.saveToStorage();
-    this.notify();
+    await this.saveToFirebase();
   }
 
-  setCurrentQuestion(question: Question | null) {
+  async setCurrentQuestion(question: Question | null) {
     this.data.currentQuestion = question;
-    this.saveToStorage();
-    this.notify();
+    await this.saveToFirebase();
   }
 
-  addPlayer(name: string) {
+  async addPlayer(name: string) {
     this.data.players[name] = this.data.players[name] || 0;
-    this.saveToStorage();
-    this.notify();
+    await this.saveToFirebase();
   }
 
-  addPendingAnswer(playerName: string, answerData: any) {
+  async addPendingAnswer(playerName: string, answerData: any) {
     this.data.pendingAnswers[playerName] = answerData;
-    this.saveToStorage();
-    this.notify();
+    await this.saveToFirebase();
   }
 
-  processPendingAnswers() {
+  async processPendingAnswers() {
     // ポイント加算
     Object.entries(this.data.pendingAnswers).forEach(([playerName, answerData]) => {
       if (answerData.isCorrect) {
@@ -208,11 +204,10 @@ class GameStateManager {
     });
 
     this.data.questionResults[this.data.questionIndex].answers.sort((a, b) => a.timestamp - b.timestamp);
-    this.saveToStorage();
-    this.notify();
+    await this.saveToFirebase();
   }
 
-  nextQuestion() {
+  async nextQuestion() {
     if (this.data.questionIndex + 1 < questions.length) {
       this.data.questionIndex++;
       this.data.gameState = 'waiting';
@@ -221,22 +216,19 @@ class GameStateManager {
     } else {
       this.data.gameState = 'results';
     }
-    this.saveToStorage();
-    this.notify();
+    await this.saveToFirebase();
   }
 
-  resetGame() {
+  async resetGame() {
     this.data = {
       gameState: 'waiting',
       currentQuestion: null,
       questionIndex: 0,
       players: {},
       questionResults: [],
-      pendingAnswers: {},
-      lastUpdated: Date.now()
+      pendingAnswers: {}
     };
-    this.saveToStorage();
-    this.notify();
+    await this.saveToFirebase();
   }
 
   getRanking() {

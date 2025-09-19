@@ -35,15 +35,15 @@ const PlayerPage: React.FC = () => {
   }, [gameState, questionIndex]);
 
   // プレイヤー登録
-  const registerPlayer = () => {
+  const registerPlayer = async () => {
     if (playerName.trim()) {
-      gameManager.addPlayer(playerName.trim());
+      await gameManager.addPlayer(playerName.trim());
       setIsRegistered(true);
     }
   };
 
   // プレイヤーの回答を処理
-  const handleAnswer = (answerIndex: number) => {
+  const handleAnswer = async (answerIndex: number) => {
     if (hasAnswered || gameState !== 'question') return;
     
     setSelectedAnswer(answerIndex);
@@ -54,7 +54,7 @@ const PlayerPage: React.FC = () => {
     const trimmedName = playerName.trim();
     
     // 回答を一時保存（ポイントはまだ加算しない）
-    gameManager.addPendingAnswer(trimmedName, {
+    await gameManager.addPendingAnswer(trimmedName, {
       answer: answerIndex,
       isCorrect: answerIndex === currentQuestion!.correct,
       timestamp: answerTime,
@@ -68,7 +68,7 @@ const PlayerPage: React.FC = () => {
         <div className="max-w-lg mx-auto">
           <div className="bg-white rounded-lg p-8 shadow-xl">
             <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
-              Yuki&Maki Wedding Party
+              結婚式クイズに参加
             </h1>
             <div className="space-y-4">
               <div>

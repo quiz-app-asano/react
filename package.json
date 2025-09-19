@@ -10,7 +10,8 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "lucide-react": "latest"
+    "lucide-react": "latest",
+    "firebase": "^10.0.0"
   },
   "devDependencies": {
     "@types/node": "latest",
