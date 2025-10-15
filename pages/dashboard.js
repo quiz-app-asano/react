@@ -121,7 +121,7 @@ const DashboardPage = () => {
       <div className="bg-white/10 backdrop-blur rounded-lg p-6 mb-6">
         <h2 className="text-3xl font-bold mb-6 flex items-center gap-2 justify-center">
           <Shuffle className="w-8 h-8 text-purple-400" />
-          🎰 イベントルーレット
+          🎰 GOKUGOKUルーレット
         </h2>
         
         <div className="flex justify-center items-center gap-4 mb-6">
@@ -190,7 +190,7 @@ const DashboardPage = () => {
         <div className="flex items-center justify-center mb-8">
           <h1 className="text-4xl font-bold flex items-center gap-3">
             <Trophy className="w-10 h-10 text-yellow-400" />
-            結婚式クイズ ダッシュボード
+             YUKI&MAKI GOKUGOKU Quiz
           </h1>
         </div>
 
