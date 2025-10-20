@@ -130,8 +130,7 @@ const AdminPage = () => {
           <h2 className="text-xl font-semibold mb-4">🎰 イベントルーレット</h2>
           <div className="space-y-4">
             <p className="text-gray-300 text-sm">
-              参加者の中からランダムに選ばれた人が飲み物にチャレンジ！
-              ダッシュボードでスロット風演出が表示されます。
+              参加者の中からランダムに選ばれた人が飲み
             </p>
             <div className="flex gap-3">
               <button
@@ -142,6 +141,7 @@ const AdminPage = () => {
                     ? 'bg-purple-600 hover:bg-purple-700 text-white'
                     : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 }`}
+                title={Object.keys(players).length === 0 ? '参加者が必要です' : ''}
               >
                 <Shuffle className="w-5 h-5" />
                 {rouletteState === 'spinning' ? '回転中...' : 'ルーレット開始'}
@@ -159,6 +159,18 @@ const AdminPage = () => {
                 ルーレットリセット
               </button>
             </div>
+            
+            {Object.keys(players).length === 0 && (
+              <div className="text-yellow-400 text-sm bg-yellow-900/20 p-3 rounded-lg">
+                ⚠️ ルーレットを使用するには参加者が必要です。クイズに参加してもらってください。
+              </div>
+            )}
+            
+            {gameState === 'results' && Object.keys(players).length > 0 && (
+              <div className="text-green-400 text-sm bg-green-900/20 p-3 rounded-lg">
+                ✅ クイズ終了後もルーレットは使用できます！何度でも回せます。
+              </div>
+            )}
           </div>
         </div>
 
