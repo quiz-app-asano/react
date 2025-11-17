@@ -221,13 +221,7 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-purple-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-center mb-8">
-          <h1 className="text-4xl font-bold flex items-center gap-3">
-            <Trophy className="w-10 h-10 text-yellow-400" />
-            花&三浦クイズ
-          </h1>
-        </div>
-
+        
         {rouletteState !== 'idle' && <SlotMachine />}
 
         <div className="max-w-4xl mx-auto">
