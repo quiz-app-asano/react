@@ -58,13 +58,45 @@ const DashboardPage = () => {
     try {
       if (!players || typeof players !== 'object') return [];
       
-      return Object.entries(players)
-        .filter(([name, score]) => name && typeof score === 'number')
-        .sort(([,a], [,b]) => (b || 0) - (a || 0))
-        .map(([name, score], index) => ({ 
-          rank: index + 1, 
-          name: name || 'Unknown', 
-          score: score || 0 
+      // 各プレイヤーの合計解答時間を計算
+      const playerStats = Object.keys(players).map(name => {
+        let totalAnswerTime = 0;
+        let answerCount = 0;
+        
+        // 全問題の解答時間を集計
+        questionResults.forEach(result => {
+          if (result && result.answers) {
+            const playerAnswer = result.answers.find(a => a.playerName === name);
+            if (playerAnswer && playerAnswer.timestamp && result.questionStartTime) {
+              // 問題出題時刻を基準として解答時間を計算
+              totalAnswerTime += (playerAnswer.timestamp - result.questionStartTime);
+              answerCount++;
+            }
+          }
+        });
+        
+        return {
+          name,
+          score: players[name] || 0,
+          totalAnswerTime,
+          answerCount
+        };
+      });
+      
+      // 第一にポイント順（降順）、第二に解答時間順（昇順）でソート
+      return playerStats
+        .sort((a, b) => {
+          if (b.score !== a.score) {
+            return b.score - a.score; // ポイントが高い順
+          }
+          return a.totalAnswerTime - b.totalAnswerTime; // 解答時間が短い順
+        })
+        .map((player, index) => ({
+          rank: index + 1,
+          name: player.name,
+          score: player.score,
+          totalAnswerTime: player.totalAnswerTime,
+          answerCount: player.answerCount
         }));
     } catch (error) {
       console.error('Ranking calculation error:', error);
@@ -73,6 +105,13 @@ const DashboardPage = () => {
   };
 
   const ranking = getRanking();
+  
+  const formatTime = (milliseconds) => {
+    const seconds = Math.floor(milliseconds / 1000);
+    const ms = Math.floor((milliseconds % 1000) / 100);
+    return `${seconds}.${ms}秒`;
+  };
+
   const latestQuestionResult = questionResults && questionResults.length > 0 
     ? questionResults[questionResults.length - 1] 
     : null;
@@ -175,7 +214,7 @@ const DashboardPage = () => {
                 <strong>{rouletteResult.name}</strong>さんが
                 <strong className="text-green-400 mx-2">{rouletteResult.drink}</strong>を
                 <strong className="text-red-400">{rouletteResult.multiplier}</strong>
-                飲むことになりました！
+                飲むことになりました!
               </div>
             </div>
           )}
@@ -252,6 +291,10 @@ const DashboardPage = () => {
                             <span className="ml-2 text-sm">🍻 選ばれました!</span>
                           )}
                         </div>
+                        <div className="text-sm text-gray-400 flex items-center gap-2">
+                          <Clock className="w-3 h-3" />
+                          {player.answerCount > 0 ? formatTime(player.totalAnswerTime) : '未回答'}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -269,7 +312,7 @@ const DashboardPage = () => {
           <div className="bg-white/10 backdrop-blur rounded-lg p-6">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <Clock className="w-6 h-6 text-blue-400" />
-              回答順（最新問題）
+              回答順(最新問題)
             </h2>
             {!latestQuestionResult || !latestQuestionResult.answers || latestQuestionResult.answers.length === 0 ? (
               <div className="text-center py-12">
