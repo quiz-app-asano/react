@@ -107,14 +107,9 @@ const DashboardPage = () => {
   const ranking = getRanking();
   
   const formatTime = (milliseconds) => {
-    const seconds = Math.floor(milliseconds / 1000);
-    const ms = Math.floor((milliseconds % 1000) / 100);
-    return `${seconds}.${ms}秒`;
+    const totalSeconds = (milliseconds / 1000).toFixed(1);
+    return `${totalSeconds}秒`;
   };
-
-  const latestQuestionResult = questionResults && questionResults.length > 0 
-    ? questionResults[questionResults.length - 1] 
-    : null;
 
   const getRandomSlotContent = (type) => {
     if (type === 'name') {
@@ -235,40 +230,40 @@ const DashboardPage = () => {
 
         {rouletteState !== 'idle' && <SlotMachine />}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white/10 backdrop-blur rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Trophy className="w-6 h-6 text-yellow-400" />
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white/10 backdrop-blur rounded-lg p-8">
+            <h2 className="text-3xl font-bold mb-8 flex items-center gap-3 justify-center">
+              <Trophy className="w-8 h-8 text-yellow-400" />
               総合ランキング
             </h2>
             {ranking.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <p className="text-xl text-gray-400">まだ参加者がいません</p>
+              <div className="text-center py-16">
+                <Users className="w-20 h-20 mx-auto text-gray-400 mb-6" />
+                <p className="text-2xl text-gray-400 mb-2">まだ参加者がいません</p>
                 <p className="text-sm text-gray-500 mt-2">
                   ゲストがクイズに参加するとここに表示されます
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {ranking.map((player, index) => (
                   <div
                     key={`${player.name}-${index}`}
-                    className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                    className={`flex items-center justify-between p-6 rounded-xl transition-all ${
                       rouletteResult && rouletteResult.name === player.name
                         ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 border-2 border-purple-400 animate-pulse'
                         : index === 0
-                        ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border border-yellow-400/50'
+                        ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-2 border-yellow-400/50'
                         : index === 1
-                        ? 'bg-gradient-to-r from-gray-400/20 to-gray-500/20 border border-gray-400/50'
+                        ? 'bg-gradient-to-r from-gray-400/20 to-gray-500/20 border-2 border-gray-400/50'
                         : index === 2
-                        ? 'bg-gradient-to-r from-orange-600/20 to-orange-700/20 border border-orange-500/50'
-                        : 'bg-white/5'
+                        ? 'bg-gradient-to-r from-orange-600/20 to-orange-700/20 border-2 border-orange-500/50'
+                        : 'bg-white/5 border border-white/10'
                     }`}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6 flex-1">
                       <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+                        className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-2xl ${
                           rouletteResult && rouletteResult.name === player.name
                             ? 'bg-purple-500 text-white animate-bounce'
                             : index === 0
@@ -282,100 +277,31 @@ const DashboardPage = () => {
                       >
                         {rouletteResult && rouletteResult.name === player.name ? '🎯' : player.rank}
                       </div>
-                      <div>
-                        <div className={`text-lg font-semibold ${
-                          rouletteResult && rouletteResult.name === player.name ? 'text-purple-300' : ''
+                      <div className="flex-1">
+                        <div className={`text-2xl font-bold mb-1 ${
+                          rouletteResult && rouletteResult.name === player.name ? 'text-purple-300' : 'text-white'
                         }`}>
                           {player.name}
                           {rouletteResult && rouletteResult.name === player.name && (
-                            <span className="ml-2 text-sm">🍻 選ばれました!</span>
+                            <span className="ml-3 text-base">🍻 選ばれました!</span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-400 flex items-center gap-2">
-                          <Clock className="w-3 h-3" />
-                          {player.answerCount > 0 ? formatTime(player.totalAnswerTime) : '未回答'}
+                        <div className="flex items-center gap-4 text-gray-300">
+                          <div className="flex items-center gap-2">
+                            <Trophy className="w-4 h-4 text-yellow-400" />
+                            <span className="text-lg font-semibold">{player.score} pts</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-blue-400" />
+                            <span className="text-lg">
+                              {player.answerCount > 0 ? formatTime(player.totalAnswerTime) : '未回答'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold">
-                        {player.score}
-                      </div>
-                      <div className="text-sm text-gray-400">pts</div>
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white/10 backdrop-blur rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Clock className="w-6 h-6 text-blue-400" />
-              回答順(最新問題)
-            </h2>
-            {!latestQuestionResult || !latestQuestionResult.answers || latestQuestionResult.answers.length === 0 ? (
-              <div className="text-center py-12">
-                <Clock className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <p className="text-lg text-gray-400">まだ回答がありません</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  問題が出題され回答されると表示されます
-                </p>
-              </div>
-            ) : (
-              <div>
-                <div className="mb-4 p-3 bg-white/5 rounded-lg">
-                  <h3 className="font-semibold text-sm text-gray-300 mb-1">問題</h3>
-                  <p className="text-sm">{latestQuestionResult.question || '問題を読み込み中...'}</p>
-                </div>
-                
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {(latestQuestionResult.answers || []).map((answer, index) => (
-                    <div
-                      key={`${answer.playerName}-${answer.timestamp}-${index}`}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
-                        answer.isCorrect
-                          ? 'bg-green-500/20 border border-green-400/30'
-                          : 'bg-red-500/20 border border-red-400/30'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                          index === 0 && answer.isCorrect
-                            ? 'bg-yellow-500 text-yellow-900'
-                            : answer.isCorrect
-                            ? 'bg-green-500 text-white'
-                            : 'bg-red-500 text-white'
-                        }`}>
-                          {index + 1}
-                        </div>
-                        <div>
-                          <div className="font-semibold">{answer.playerName || 'Unknown'}</div>
-                          <div className="text-xs text-gray-300">
-                            {answer.timestamp ? new Date(answer.timestamp).toLocaleTimeString('ja-JP', {
-                              hour12: false,
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit'
-                            }) : '--:--:--'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`font-bold ${
-                          answer.isCorrect ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          {answer.isCorrect ? '正解' : '不正解'}
-                        </div>
-                        {(answer.points || 0) > 0 && (
-                          <div className="text-sm text-green-300">
-                            +{answer.points}pt
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>
