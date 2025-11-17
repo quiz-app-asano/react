@@ -64,16 +64,23 @@ const DashboardPage = () => {
         let answerCount = 0;
         
         // 全問題の解答時間を集計
-        questionResults.forEach(result => {
+        questionResults.forEach((result, idx) => {
           if (result && result.answers) {
             const playerAnswer = result.answers.find(a => a.playerName === name);
             if (playerAnswer && playerAnswer.timestamp && result.questionStartTime) {
               // 問題出題時刻を基準として解答時間を計算
-              totalAnswerTime += (playerAnswer.timestamp - result.questionStartTime);
+              const answerTime = playerAnswer.timestamp - result.questionStartTime;
+              totalAnswerTime += answerTime;
               answerCount++;
+              
+              console.log(`Player: ${name}, Question ${idx}: answerTime=${answerTime}ms, questionStartTime=${result.questionStartTime}, timestamp=${playerAnswer.timestamp}`);
+            } else {
+              console.log(`Player: ${name}, Question ${idx}: Missing data - playerAnswer=${!!playerAnswer}, timestamp=${playerAnswer?.timestamp}, questionStartTime=${result.questionStartTime}`);
             }
           }
         });
+        
+        console.log(`Player: ${name}, Total: ${totalAnswerTime}ms over ${answerCount} questions`);
         
         return {
           name,
@@ -221,7 +228,13 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-purple-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
-        
+        <div className="flex items-center justify-center mb-8">
+          <h1 className="text-4xl font-bold flex items-center gap-3">
+            <Trophy className="w-10 h-10 text-yellow-400" />
+            花&三浦クイズ
+          </h1>
+        </div>
+
         {rouletteState !== 'idle' && <SlotMachine />}
 
         <div className="max-w-4xl mx-auto">
