@@ -190,11 +190,7 @@ const DashboardPage = () => {
         <div className="flex items-center justify-center mb-8">
           <h1 className="text-4xl font-bold flex items-center gap-3">
             <Trophy className="w-10 h-10 text-yellow-400" />
-<<<<<<< HEAD
-            望月家クイズ
-=======
-             YUKI&MAKI GOKUGOKU Quiz
->>>>>>> b9be95feb681e168b8e554af44c7cdb308008a48
+            花&三浦クイズ
           </h1>
         </div>
 

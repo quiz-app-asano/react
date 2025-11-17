@@ -88,11 +88,7 @@ const PlayerPage = () => {
         <div className="max-w-lg mx-auto">
           <div className="bg-white rounded-lg p-8 shadow-xl">
             <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">
-<<<<<<< HEAD
-              望月家クイズに参加
-=======
-              YUKI & MAKI GOKUGOKU Quiz
->>>>>>> b9be95feb681e168b8e554af44c7cdb308008a48
+              花&三浦クイズに参加
             </h1>
             
             {playerName && gameManager.players[playerName] !== undefined && (
