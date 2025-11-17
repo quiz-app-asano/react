@@ -43,7 +43,7 @@ const AdminPage = () => {
 
   const startRoulette = async () => {
     if (Object.keys(players).length === 0) {
-      alert('参加者がいません！先にクイズ参加者を集めてください。');
+      alert('参加者がいません');
       return;
     }
     await gameManager.startRoulette();
@@ -130,8 +130,7 @@ const AdminPage = () => {
           <h2 className="text-xl font-semibold mb-4">🎰 イベントルーレット</h2>
           <div className="space-y-4">
             <p className="text-gray-300 text-sm">
-              参加者の中からランダムに選ばれた人が飲み物にチャレンジ！
-              ダッシュボードでスロット風演出が表示されます。
+              今回は使わない
             </p>
             <div className="flex gap-3">
               <button

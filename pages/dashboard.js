@@ -190,7 +190,7 @@ const DashboardPage = () => {
         <div className="flex items-center justify-center mb-8">
           <h1 className="text-4xl font-bold flex items-center gap-3">
             <Trophy className="w-10 h-10 text-yellow-400" />
-            結婚式クイズ ダッシュボード
+            望月家クイズ
           </h1>
         </div>
 
