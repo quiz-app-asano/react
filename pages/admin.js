@@ -23,14 +23,26 @@ const AdminPage = () => {
 
   const startQuestion = async () => {
     if (questionIndex < questions.length) {
+      console.log('=== Starting Question ===');
+      console.log('Question Index:', questionIndex);
+      console.log('Question:', questions[questionIndex]);
+      
       await gameManager.setCurrentQuestion(questions[questionIndex]);
       await gameManager.setGameState('question');
+      
+      console.log('Question started, checking questionResults:', gameManager.questionResults[questionIndex]);
     }
   };
 
   const showAnswer = async () => {
+    console.log('=== Showing Answer ===');
+    console.log('Pending Answers:', gameManager.pendingAnswers);
+    console.log('Question Results before processing:', gameManager.questionResults);
+    
     await gameManager.setGameState('answer');
     await gameManager.processPendingAnswers();
+    
+    console.log('Question Results after processing:', gameManager.questionResults);
   };
 
   const nextQuestion = async () => {

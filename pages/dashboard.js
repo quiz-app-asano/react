@@ -58,29 +58,52 @@ const DashboardPage = () => {
     try {
       if (!players || typeof players !== 'object') return [];
       
+      console.log('=== Ranking Calculation Debug ===');
+      console.log('Players:', players);
+      console.log('Question Results:', questionResults);
+      
       // 各プレイヤーの合計解答時間を計算
       const playerStats = Object.keys(players).map(name => {
         let totalAnswerTime = 0;
         let answerCount = 0;
         
+        console.log(`\n--- Processing player: ${name} ---`);
+        
         // 全問題の解答時間を集計
         questionResults.forEach((result, idx) => {
+          console.log(`Question ${idx}:`, {
+            hasResult: !!result,
+            hasAnswers: !!result?.answers,
+            questionStartTime: result?.questionStartTime,
+            answersCount: result?.answers?.length || 0
+          });
+          
           if (result && result.answers) {
             const playerAnswer = result.answers.find(a => a.playerName === name);
+            
+            if (playerAnswer) {
+              console.log(`  Player answer found:`, {
+                timestamp: playerAnswer.timestamp,
+                questionStartTime: result.questionStartTime,
+                hasTimestamp: !!playerAnswer.timestamp,
+                hasQuestionStartTime: !!result.questionStartTime
+              });
+            } else {
+              console.log(`  No answer found for ${name} in question ${idx}`);
+            }
+            
             if (playerAnswer && playerAnswer.timestamp && result.questionStartTime) {
               // 問題出題時刻を基準として解答時間を計算
               const answerTime = playerAnswer.timestamp - result.questionStartTime;
               totalAnswerTime += answerTime;
               answerCount++;
               
-              console.log(`Player: ${name}, Question ${idx}: answerTime=${answerTime}ms, questionStartTime=${result.questionStartTime}, timestamp=${playerAnswer.timestamp}`);
-            } else {
-              console.log(`Player: ${name}, Question ${idx}: Missing data - playerAnswer=${!!playerAnswer}, timestamp=${playerAnswer?.timestamp}, questionStartTime=${result.questionStartTime}`);
+              console.log(`  ✓ Answer time calculated: ${answerTime}ms (${(answerTime/1000).toFixed(1)}s)`);
             }
           }
         });
         
-        console.log(`Player: ${name}, Total: ${totalAnswerTime}ms over ${answerCount} questions`);
+        console.log(`Total for ${name}: ${totalAnswerTime}ms over ${answerCount} questions`);
         
         return {
           name,
