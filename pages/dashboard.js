@@ -118,33 +118,34 @@ const DashboardPage = () => {
     return `${totalSeconds}秒`;
   };
 
-  const getRandomSlotContent = (type) => {
-    if (type === 'name') {
-      const playerNames = Object.keys(players);
-      return playerNames.length > 0 ? playerNames[Math.floor(Math.random() * playerNames.length)] : '???';
-    } else if (type === 'drink') {
-      return drinks[Math.floor(Math.random() * drinks.length)];
-    } else if (type === 'multiplier') {
-      return multipliers[Math.floor(Math.random() * multipliers.length)];
-    }
-    return '???';
-  };
-
   const SlotMachine = () => {
     const [displaySlots, setDisplaySlots] = useState({
-      name: getRandomSlotContent('name'),
-      drink: getRandomSlotContent('drink'),
-      multiplier: getRandomSlotContent('multiplier')
+      name: '',
+      drink: '',
+      multiplier: ''
     });
+
+    useEffect(() => {
+      // 初期値を設定
+      if (!displaySlots.name) {
+        const playerNames = Object.keys(players);
+        setDisplaySlots({
+          name: playerNames.length > 0 ? playerNames[Math.floor(Math.random() * playerNames.length)] : '???',
+          drink: drinks[Math.floor(Math.random() * drinks.length)],
+          multiplier: multipliers[Math.floor(Math.random() * multipliers.length)]
+        });
+      }
+    }, []);
 
     useEffect(() => {
       let interval;
       if (rouletteSpinning) {
         interval = setInterval(() => {
+          const playerNames = Object.keys(players);
           setDisplaySlots({
-            name: getRandomSlotContent('name'),
-            drink: getRandomSlotContent('drink'),
-            multiplier: getRandomSlotContent('multiplier')
+            name: playerNames.length > 0 ? playerNames[Math.floor(Math.random() * playerNames.length)] : '???',
+            drink: drinks[Math.floor(Math.random() * drinks.length)],
+            multiplier: multipliers[Math.floor(Math.random() * multipliers.length)]
           });
         }, 100);
       } else if (rouletteState === 'result' && rouletteSlots) {
@@ -154,7 +155,7 @@ const DashboardPage = () => {
       return () => {
         if (interval) clearInterval(interval);
       };
-    }, [rouletteSpinning, rouletteState, rouletteSlots]);
+    }, [rouletteSpinning, rouletteState]);
 
     const currentSlots = rouletteState === 'result' && !rouletteSpinning ? rouletteSlots : displaySlots;
 
