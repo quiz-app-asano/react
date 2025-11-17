@@ -7,6 +7,7 @@ const PlayerPage = () => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [currentQuestionId, setCurrentQuestionId] = useState(null);
 
   // 状態をリアルタイムで同期
   const [gameState, setGameState] = useState(gameManager.gameState);
@@ -41,12 +42,17 @@ const PlayerPage = () => {
     return unsubscribe;
   }, []);
 
+  // 問題が変わった時に回答状態をリセット（questionIndexまたはcurrentQuestionのIDで判定）
   useEffect(() => {
-    if (gameState === 'waiting') {
+    const newQuestionId = currentQuestion?.id;
+    
+    // 新しい問題に変わった、または待機状態に戻った時
+    if (gameState === 'waiting' || (newQuestionId && newQuestionId !== currentQuestionId)) {
       setHasAnswered(false);
       setSelectedAnswer(null);
+      setCurrentQuestionId(newQuestionId);
     }
-  }, [gameState, questionIndex]);
+  }, [gameState, questionIndex, currentQuestion, currentQuestionId]);
 
   const registerPlayer = async () => {
     if (playerName.trim()) {
@@ -80,6 +86,7 @@ const PlayerPage = () => {
     setIsRegistered(false);
     setHasAnswered(false);
     setSelectedAnswer(null);
+    setCurrentQuestionId(null);
   };
 
   if (!isRegistered) {
