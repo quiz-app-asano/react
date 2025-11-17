@@ -236,8 +236,8 @@ const PlayerPage = () => {
                           : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      <div className="flex items-start gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                           selectedAnswer === index
                             ? 'border-purple-500 bg-purple-500'
                             : 'border-gray-300'
@@ -246,7 +246,7 @@ const PlayerPage = () => {
                             <CheckCircle className="w-4 h-4 text-white" />
                           )}
                         </div>
-                        <span className="font-medium">{option}</span>
+                        <span className="font-medium flex-1">{option}</span>
                       </div>
                     </button>
                   ))}
@@ -286,8 +286,8 @@ const PlayerPage = () => {
                           : 'border-gray-200 bg-gray-50'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      <div className="flex items-start gap-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                           index === currentQuestion.correct
                             ? 'border-green-500 bg-green-500'
                             : selectedAnswer === index
@@ -298,9 +298,9 @@ const PlayerPage = () => {
                             <CheckCircle className="w-4 h-4 text-white" />
                           )}
                         </div>
-                        <span className="font-medium">{option}</span>
+                        <span className="font-medium flex-1">{option}</span>
                         {index === currentQuestion.correct && (
-                          <span className="text-green-600 font-bold ml-auto">正解!</span>
+                          <span className="text-green-600 font-bold">正解!</span>
                         )}
                       </div>
                     </div>
